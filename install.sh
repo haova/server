@@ -11,7 +11,7 @@ require_root() {
 
 setup_system() {
     apt-get update
-    apt install -y ca-certificates curl
+    apt-get install -y ca-certificates curl libpcre3-dev libssl-dev perl make build-essential wget gnupg lsb-release
 }
 
 install_docker() {
@@ -26,13 +26,19 @@ Components: stable
 Architectures: $(dpkg --print-architecture)
 Signed-By: /etc/apt/keyrings/docker.asc
 EOF
-    apt update
-    apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    apt-get update
+    apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 }
 
+install_openresty() {
+    wget -O - https://openresty.org/package/pubkey.gpg | sudo gpg --dearmor -o /usr/share/keyrings/openresty.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/openresty.gpg] https://openresty.org/package/ubuntu $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/openresty.list > /dev/null
+    apt-get update
+    apt-get -y install openresty
+}
 
 require_root
 
 setup_system
 install_docker
-
+install_openresty
