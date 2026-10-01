@@ -9,6 +9,19 @@ require_root() {
     fi
 }
 
+require_ubuntu_2404() {
+    if [[ ! -r /etc/os-release ]]; then
+        echo "Ubuntu Server 24.04 is required"
+        exit 1
+    fi
+
+    . /etc/os-release
+    if [[ ${ID:-} != "ubuntu" || ${VERSION_ID:-} != "24.04" ]]; then
+        echo "Ubuntu Server 24.04 is required"
+        exit 1
+    fi
+}
+
 setup_system() {
     apt-get update
     apt-get install -y ca-certificates curl libpcre3-dev libssl-dev perl make build-essential wget gnupg lsb-release
@@ -38,6 +51,7 @@ install_openresty() {
 }
 
 require_root
+require_ubuntu_2404
 
 setup_system
 install_docker
