@@ -36,6 +36,10 @@ setup_system() {
         pcre_dev=libpcre2-dev
     fi
 
+    if [[ $(. /etc/os-release && echo "$VERSION_ID") != "24.04" ]]; then
+        rm -f /etc/apt/sources.list.d/openresty.list /usr/share/keyrings/openresty.gpg
+    fi
+
     apt-get update
     apt-get install -y ca-certificates curl $pcre_dev libssl-dev perl make build-essential wget gnupg lsb-release
 }
@@ -122,18 +126,25 @@ select_components() {
         return
     fi
 
-    apt-get install -y whiptail
+    local names=(docker website basic_firewall cloudflare_firewall)
+    local input choice
 
-    local choices
-    choices=$(whiptail --title "Install" --separate-output --checklist \
-        "Select components to install (space to toggle)" 16 64 4 \
-        docker "Docker" ON \
-        website "Web server (OpenResty / nginx)" ON \
-        basic_firewall "Basic firewall (ufw: 22, 80, 443)" OFF \
-        cloudflare_firewall "Cloudflare firewall (ufw: 80/443 only from Cloudflare IPs)" ON \
-        3>&1 1>&2 2>&3 </dev/tty) || { error "Cancelled"; exit 1; }
+    echo "Select components to install:"
+    echo "  1) Docker"
+    echo "  2) Web server (OpenResty / nginx)"
+    echo "  3) Basic firewall (ufw: 22, 80, 443)"
+    echo "  4) Cloudflare firewall (ufw: 80/443 only from Cloudflare IPs)"
+    read -r -p "Enter numbers separated by spaces [1 2 4]: " input </dev/tty
+    input=${input:-1 2 4}
 
-    SELECTED=" $(echo $choices) "
+    SELECTED=" "
+    for choice in $input; do
+        if [[ ! $choice =~ ^[1-4]$ ]]; then
+            error "Invalid choice: $choice"
+            exit 1
+        fi
+        SELECTED+="${names[choice - 1]} "
+    done
 }
 
 is_selected() {
