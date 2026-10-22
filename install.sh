@@ -50,9 +50,44 @@ install_openresty() {
     apt-get -y install openresty
 }
 
+config_openresty() {
+}
+
+setup_firewall() {
+    CF_IPV4_URL="https://www.cloudflare.com/ips-v4"
+    CF_IPV6_URL="https://www.cloudflare.com/ips-v6"
+    CF_IPV4=$(curl -fsSL "$CF_IPV4_URL")
+    CF_IPV6=$(curl -fsSL "$CF_IPV6_URL")
+
+    ufw --force reset
+
+    ufw default deny incoming
+    ufw default allow outgoing
+
+    ufw limit 22/tcp
+
+    while IFS= read -r ip; do
+        [[ -z "$ip" ]] && continue
+
+        ufw allow from "$ip" to any port 80 proto tcp
+        ufw allow from "$ip" to any port 443 proto tcp
+    done <<< "$CF_IPV4"
+
+    while IFS= read -r ip; do
+        [[ -z "$ip" ]] && continue
+
+        ufw allow from "$ip" to any port 80 proto tcp
+        ufw allow from "$ip" to any port 443 proto tcp
+    done <<< "$CF_IPV6"
+
+    ufw --force enable
+}
+
 require_root
 require_ubuntu_2404
 
 setup_system
 install_docker
 install_openresty
+config_openresty
+setup_firewall
