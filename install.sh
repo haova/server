@@ -9,22 +9,27 @@ require_root() {
     fi
 }
 
-require_ubuntu_2404() {
+require_supported_ubuntu() {
     if [[ ! -r /etc/os-release ]]; then
-        echo "Ubuntu Server 24.04 is required"
+        echo "Ubuntu Server 24.04 or 26.04 is required"
         exit 1
     fi
 
     . /etc/os-release
-    if [[ ${ID:-} != "ubuntu" || ${VERSION_ID:-} != "24.04" ]]; then
-        echo "Ubuntu Server 24.04 is required"
+    if [[ ${ID:-} != "ubuntu" || ( ${VERSION_ID:-} != "24.04" && ${VERSION_ID:-} != "26.04" ) ]]; then
+        echo "Ubuntu Server 24.04 or 26.04 is required"
         exit 1
     fi
 }
 
 setup_system() {
+    local pcre_dev=libpcre3-dev
+    if [[ $(. /etc/os-release && echo "$VERSION_ID") != "24.04" ]]; then
+        pcre_dev=libpcre2-dev
+    fi
+
     apt-get update
-    apt-get install -y ca-certificates curl libpcre3-dev libssl-dev perl make build-essential wget gnupg lsb-release
+    apt-get install -y ca-certificates curl $pcre_dev libssl-dev perl make build-essential wget gnupg lsb-release
 }
 
 install_docker() {
@@ -51,6 +56,7 @@ install_openresty() {
 }
 
 config_openresty() {
+    :
 }
 
 setup_firewall() {
@@ -84,7 +90,7 @@ setup_firewall() {
 }
 
 require_root
-require_ubuntu_2404
+require_supported_ubuntu
 
 setup_system
 install_docker
